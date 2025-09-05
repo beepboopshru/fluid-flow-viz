@@ -32,12 +32,22 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
-
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    simulations: defineTable({
+      name: v.string(),
+      parameters: v.object({
+        viscosity: v.number(),
+        diffusion: v.number(),
+        flowSpeed: v.number(),
+        gridResolution: v.number(),
+        stepSize: v.number(),
+        visualizationMode: v.string(),
+      }),
+      shareId: v.optional(v.string()),
+      userId: v.optional(v.id("users")),
+      isPublic: v.boolean(),
+    })
+      .index("by_share_id", ["shareId"])
+      .index("by_user_id", ["userId"]),
   },
   {
     schemaValidation: false,
