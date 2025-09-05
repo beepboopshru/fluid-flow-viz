@@ -286,23 +286,32 @@ export default function FluidCanvas({
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
     
-    // Render fluid based on visualization mode
+    // Render fluid based on visualization mode, but lock dye to a single color if present
     for (let i = 1; i <= N; i++) {
       for (let j = 1; j <= N; j++) {
         const x = (i - 1) * cellWidth;
         const y = (j - 1) * cellHeight;
-        
+
+        // If there's dye in the cell, draw a consistent dye color and skip mode-based coloring
+        const dye = grid.dens[i][j];
+        if (dye > 0.01) {
+          // Fixed neon aqua/green with alpha clamped
+          ctx.fillStyle = `rgba(0, 255, 128, ${Math.min(dye, 1)})`;
+          ctx.fillRect(x, y, cellWidth, cellHeight);
+          continue;
+        }
+
+        // Otherwise render by visualization mode
         let intensity = 0;
         let hue = 0;
-        
         switch (visualizationMode) {
           case 'velocity':
             intensity = Math.sqrt(grid.u[i][j] * grid.u[i][j] + grid.v[i][j] * grid.v[i][j]) * 50;
             hue = 240; // Blue
             break;
           case 'pressure':
-            intensity = Math.abs(grid.dens[i][j]) * 100;
-            hue = 300; // Magenta
+            intensity = 0; // no density -> no pressure shading
+            hue = 300; // Magenta (unused if intensity is 0)
             break;
           case 'vorticity':
             const vorticity = (grid.v[i + 1][j] - grid.v[i - 1][j]) - (grid.u[i][j + 1] - grid.u[i][j - 1]);
@@ -310,17 +319,10 @@ export default function FluidCanvas({
             hue = vorticity > 0 ? 0 : 120; // Red for positive, green for negative
             break;
         }
-        
+
         intensity = Math.min(intensity, 1);
-        
         if (intensity > 0.01) {
           ctx.fillStyle = `hsla(${hue}, 100%, 50%, ${intensity})`;
-          ctx.fillRect(x, y, cellWidth, cellHeight);
-        }
-        
-        // Add density visualization
-        if (grid.dens[i][j] > 0.01) {
-          ctx.fillStyle = `rgba(0, 255, 128, ${Math.min(grid.dens[i][j], 1)})`;
           ctx.fillRect(x, y, cellWidth, cellHeight);
         }
       }
